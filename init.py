@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 
-from os import chdir
-import shutil
-from pathlib import Path
+import argparse
 import re
+import shutil
 import subprocess
 import sys
-import argparse
 import venv
+from os import chdir
+from pathlib import Path
+
 
 srcpath = Path(__file__).parent
 
 
-def create_project_dir(dirname: str, parent: str) -> Path:
-    path = Path(parent).joinpath(dirname)
-    if path.exists():
-        print("Path already exists, aborting.")
-        sys.exit(1)
-    path.mkdir()
-    print(f"Created project directory: {path}")
-    return path
+def create_project_dir(root_path: Path, force: bool = False) -> Path:
+    if root_path.exists():
+        if force:
+            print(f"Path {root_path} already exists, using it anyway because --force.")
+        else:
+            print(f"Path {root_path} already exists, aborting.")
+            sys.exit(1)
+    else:
+        root_path.mkdir()
+        print(f"Created project directory: {root_path}")
+    return root_path
 
 
 def create_src_dir(root_path: Path, project_name: str):
@@ -59,20 +63,27 @@ def copy_base_files(root_path: Path, project_name: str, description: str):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("project_name")
-    parser.add_argument("parent", help="Parent directory of the project")
+    parser.add_argument("root", help="Root directory of the project")
+    parser.add_argument("-n", "--name", help="Project name (will be inferred from dirname if omitted).")
     parser.add_argument("-d", "--description", nargs="?", default="")
     parser.add_argument("-ng", "--no-git", help="Don't run git init.", action="store_true")
+    parser.add_argument("-f", "--force", help="Continue even if destination directory exists.", action="store_true")
 
     args = parser.parse_args()
+    root_path = Path(args.root).absolute()
+    project_name = args.name or root_path.stem
 
-    if not re.match(r"^[a-zA-Z0-9\-_]+$", args.project_name):
+    if not re.match(r"^[a-zA-Z0-9\-_]+$", project_name):
         print("Project name can only contain alphanumeric characters, hyphens, and underscores.")
         sys.exit(1)
 
-    root_path = create_project_dir(args.project_name, args.parent)
-    copy_base_files(root_path=root_path, project_name=args.project_name, description=args.description)
-    create_src_dir(root_path=root_path, project_name=args.project_name)
+    choice = input(f"Create project {project_name} in {root_path}? [Y/n] ")
+    if choice.lower() == "n":
+        sys.exit(0)
+
+    create_project_dir(root_path=root_path, force=args.force)
+    copy_base_files(root_path=root_path, project_name=project_name, description=args.description)
+    create_src_dir(root_path=root_path, project_name=project_name)
     chdir(root_path)
 
     venv.create(".venv", with_pip=True)
