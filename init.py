@@ -13,17 +13,19 @@ from pathlib import Path
 srcpath = Path(__file__).parent
 
 
-def create_project_dir(root_path: Path, force: bool = False) -> Path:
-    if root_path.exists():
-        if force:
-            print(f"Path {root_path} already exists, using it anyway because --force.")
-        else:
-            print(f"Path {root_path} already exists, aborting.")
+def create_dir(path: Path, force: bool = False) -> Path:
+    if path.exists():
+        if not path.is_dir():
+            print(f"Path {path} exists and is not a directory; aborting.")
             sys.exit(1)
+        if not force:
+            print(f"Path {path} already exists, aborting. (Use --force to use it anyway)")
+            sys.exit(1)
+        print(f"Path {path} already exists, using it anyway because --force.")
     else:
-        root_path.mkdir()
-        print(f"Created project directory: {root_path}")
-    return root_path
+        path.mkdir()
+        print(f"Created project directory: {path}")
+    return path
 
 
 def create_src_dir(root_path: Path, project_name: str):
@@ -58,32 +60,40 @@ def copy_base_files(root_path: Path, project_name: str, description: str):
     copy_pyproject_toml(root_path=root_path, project_name=project_name, description=description)
     for filename in (".flake8", ".gitignore", "LICENSE"):
         shutil.copy(srcpath.joinpath(filename).absolute(), root_path.joinpath(filename).absolute())
+    with root_path.joinpath("README.md").open("wt", encoding="utf8") as readme:
+        readme.write(f"# {project_name}")
+        if description:
+            readme.write(f"\n{description}")
     print("Copied base files.")
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("root", help="Root directory of the project")
-    parser.add_argument("-n", "--name", help="Project name (will be inferred from dirname if omitted).")
+    parser.add_argument("project_name")
+    parser.add_argument("directory", help="Project root dir (default: cwd/project_name)", nargs="?")
     parser.add_argument("-d", "--description", nargs="?", default="")
     parser.add_argument("-ng", "--no-git", help="Don't run git init.", action="store_true")
     parser.add_argument("-f", "--force", help="Continue even if destination directory exists.", action="store_true")
 
     args = parser.parse_args()
-    root_path = Path(args.root).absolute()
-    project_name = args.name or root_path.stem
 
-    if not re.match(r"^[a-zA-Z0-9\-_]+$", project_name):
+    if not re.match(r"^[a-zA-Z0-9\-_]+$", args.project_name):
         print("Project name can only contain alphanumeric characters, hyphens, and underscores.")
         sys.exit(1)
 
-    choice = input(f"Create project {project_name} in {root_path}? [Y/n] ")
+    if args.directory:
+        root_path = Path(args.directory)
+    else:
+        root_path = Path(args.project_name)
+
+    choice = input(f"Create project {args.project_name} in {root_path}? [Y/n] ")
     if choice.lower() == "n":
         sys.exit(0)
 
-    create_project_dir(root_path=root_path, force=args.force)
-    copy_base_files(root_path=root_path, project_name=project_name, description=args.description)
-    create_src_dir(root_path=root_path, project_name=project_name)
+    create_dir(path=root_path, force=args.force)
+    print(f"Using path `{root_path.absolute()}`.")
+    copy_base_files(root_path=root_path, project_name=args.project_name, description=args.description)
+    create_src_dir(root_path=root_path, project_name=args.project_name)
     chdir(root_path)
 
     venv.create(".venv", with_pip=True)
