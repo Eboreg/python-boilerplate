@@ -81,7 +81,7 @@ class Runner:
             "--author",
             "Robert Huselius <robert@huseli.us>",
             "--python",
-            ">=3.11",
+            ">=3.11,<4.0",
             "--license",
             "GPL-3.0-or-later",
             "--no-interaction",
