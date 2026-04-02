@@ -1,0 +1,23 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[project]
+name = "{{project_name}}"
+authors = [
+    {name = "Robert Huselius", email = "robert@huseli.us"},
+]
+description = "{{description}}"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = []
+version = "0.1.0"
+
+[project.optional-dependencies]
+dev = [
+    "flake8",
+    "ipdb",
+    "ipython",
+    "isort",
+    "pylint",
+]

@@ -1,0 +1,53 @@
+[project]
+name = "python-boilerplate"
+version = "0.2.0"
+description = "Add your description here"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+readme = "README.md"
+authors = [
+    { name = "Robert Huselius", email = "robert@huseli.us" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "tomlkit>=0.14.0",
+]
+
+[project.scripts]
+python-boilerplate = "python_boilerplate.main:main"
+
+[build-system]
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipdb>=0.13.13",
+    "ipython>=9.12.0",
+    "ruff>=0.15.9",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [".venv", ".git", ".mypy_cache", "__pycache__", "build", "node_modules"]
+show-fixes = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I"]
+ignore = ["E722"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+combine-as-imports = true
+default-section = "third-party"
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+[tool.ruff.format]
+quote-style = "double"
