@@ -1,19 +1,12 @@
-import subprocess
-from os import chdir
-
 from python_boilerplate.runners import Runner
 
 
 class PoetryRunner(Runner):
-    ASSETS_SUBDIR = "poetry"
-    BASE_FILENAMES = [".gitignore", "LICENSE", ".editorconfig", "poetry.toml"]
+    NAME = "poetry"
 
     def init_poetry(self):
-        chdir(self.project_root_path)
-        dev_dependencies = [tool.dev_dependency for tool in self.TOOLS]
-
         # Will only create a pyproject.toml and nothing more
-        subprocess.call(
+        self.run_in_project_dir(
             [
                 "poetry",
                 "init",
@@ -28,14 +21,14 @@ class PoetryRunner(Runner):
                 "--license",
                 "GPL-3.0-or-later",
                 "--no-interaction",
-                *[f"--dev-dependency={dep}" for dep in dev_dependencies],
+                *[f"--dev-dependency='{dep}'" for dep in self.get_dev_dependencies()],
+                *[f"--dependency='{dep}'" for dep in self.get_dependencies()],
             ]
         )
         print(f"Ran poetry init in {self.project_root_path}.")
 
     def sync_poetry(self):
-        chdir(self.project_root_path)
-        subprocess.call(["poetry", "sync"])
+        self.run_in_project_dir(["poetry", "sync"])
         print("Ran poetry sync.")
 
     def run(self, force: bool = False, no_git: bool = False):

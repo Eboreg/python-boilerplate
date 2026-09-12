@@ -1,4 +1,3 @@
-import subprocess
 import venv
 from os import chdir
 
@@ -6,7 +5,7 @@ from python_boilerplate.runners import Runner
 
 
 class SetuptoolsRunner(Runner):
-    ASSETS_SUBDIR = "setuptools"
+    NAME = "setuptools"
 
     def create_venv(self):
         chdir(self.project_root_path)
@@ -14,8 +13,7 @@ class SetuptoolsRunner(Runner):
         print(f"* Created virtual environment in `{self.project_root_path / '.venv'}`.")
 
     def run_pip_install(self):
-        chdir(self.project_root_path)
-        subprocess.run(". .venv/bin/activate && pip install -e .[dev]", shell=True, check=True)
+        self.run_in_project_dir(". .venv/bin/activate && pip install -e .[dev]", shell=True, check=True)
         print("* Ran pip install.")
 
     def run(self, force: bool = False, no_git: bool = False):
