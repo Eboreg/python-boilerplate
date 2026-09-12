@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import re
 import shutil
 import subprocess
@@ -54,8 +55,11 @@ class Runner(ABC):
         self.description = description
         self.tools = tools
 
-    def build_assets_paths(self, *parts: str) -> list[Path]:
-        paths = [path / "/".join(parts) for path in self.assets_paths]
+    def build_assets_paths(self, *names: str) -> list[Path]:
+        paths: list[Path] = []
+        for path in self.assets_paths:
+            for name in names:
+                paths.append(path / name)
         return [p for p in paths if p.exists()]
 
     def copy_base_files(self):
@@ -63,12 +67,12 @@ class Runner(ABC):
             shutil.copytree(base_dir, self.project_root_path, dirs_exist_ok=True)
             self.log(f"Copied base files from {base_dir} to {self.project_root_path}")
 
-        for runner_dir in self.build_assets_paths("runners", self.NAME):
+        for runner_dir in self.build_assets_paths(f"runners/{self.NAME}"):
             shutil.copytree(runner_dir, self.project_root_path, dirs_exist_ok=True)
             self.log(f"Copied {self.NAME} specific files from {runner_dir} to {self.project_root_path}")
 
         for tool in self.tools:
-            for tool_dir in self.build_assets_paths("tools", tool.name):
+            for tool_dir in self.build_assets_paths(f"tools/{tool.name}"):
                 shutil.copytree(tool_dir, self.project_root_path, dirs_exist_ok=True)
                 self.log(f"Copied {tool.name} specific files from {tool_dir} to {self.project_root_path}")
 
@@ -123,9 +127,15 @@ class Runner(ABC):
         suffix = "=" * (120 - len(message) - 5)
         print(f"=== {message} {suffix}")
 
-    def merge_pyproject_tables(self, source: dict[str, Any], target: dict[str, Any], path: list[str] | None = None):
+    def merge_pyproject_tables(
+        self,
+        source: dict[str, Any],
+        target: dict[str, Any],
+        path: list[str] | None = None,
+        tools: list[str] | None = None,
+    ):
         path = path or []
-        tools = [tool.pyproject_key for tool in self.tools]
+        tools = tools or []
 
         if len(path) == 2 and path[0] == "tool" and path[1] not in tools:
             return
@@ -134,11 +144,15 @@ class Runner(ABC):
             if isinstance(base_value, dict):
                 project_value = target.setdefault(key, {})
                 assert isinstance(project_value, dict)
-                self.merge_pyproject_tables(base_value, project_value, path + [key])
+                self.merge_pyproject_tables(base_value, project_value, path=path + [key], tools=tools)
                 if len(project_value) == 0:
                     del target[key]
             else:
                 target[key] = base_value
+
+    def merge_pyprojects(self, source: TOMLDocument, target: TOMLDocument) -> TOMLDocument:
+        self.merge_pyproject_tables(source, target, tools=[tool.pyproject_key for tool in self.tools])
+        return target
 
     def post_run(self):
         pass
@@ -172,21 +186,22 @@ class Runner(ABC):
         pass
 
     def write_pyproject_toml(self):
-        runner_toml_path = self.get_last_existing_assets_path("templates", self.NAME, "pyproject.toml")
-        base_toml_path = self.get_last_existing_assets_path("templates/base/pyproject.toml")
-        assert base_toml_path, "templates/base/pyproject.toml missing"
         project_toml_file = TOMLFile(self.project_root_path / "pyproject.toml")
-        project_toml = project_toml_file.read()
-        base_toml = TOMLFile(base_toml_path).read()
+        tomls = [
+            *[
+                TOMLFile(path).read()
+                for path in self.build_assets_paths(
+                    "templates/base/pyproject.toml",
+                    f"templates/{self.NAME}/pyproject.toml",
+                )
+            ],
+            project_toml_file.read(),
+        ]
+        toml = functools.reduce(lambda x, y: self.merge_pyprojects(x, y), tomls)
 
-        if runner_toml_path:
-            runner_toml = TOMLFile(runner_toml_path).read()
-            self.merge_pyproject_tables(runner_toml, base_toml)
-
-        self.merge_pyproject_tables(base_toml, project_toml)
-        self.update_pyproject_toml(project_toml)
-        self.replace_pyproject_toml_placeholders(project_toml)
-        project_toml_file.write(project_toml)
+        self.update_pyproject_toml(toml)
+        self.replace_pyproject_toml_placeholders(toml)
+        project_toml_file.write(toml)
 
         self.log("Wrote pyproject.toml")
 
