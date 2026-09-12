@@ -1,3 +1,26 @@
+[tool.isort]
+combine_as_imports = true
+default_section = "THIRDPARTY"
+include_trailing_comma = true
+line_length = 79
+lines_after_imports = 2
+multi_line_output = 3
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "THIRDPARTY",
+    "FIRSTPARTY",
+    "LOCALFOLDER",
+]
+skip = [".venv", "node_modules"]
+
+[tool.mypy]
+check_untyped_defs = true
+files = "."
+follow_imports = "skip"
+ignore_missing_imports = true
+show_error_codes = true
+
 [tool.pylint.main]
 disable = [
     "broad-exception-caught",
@@ -20,43 +43,24 @@ ignore = [".venv", "node_modules"]
 ignore-patterns = ["^\\.#", ".*\\.pyi", "apps\\.py"]
 max-line-length = 119
 
-[tool.isort]
-combine_as_imports = true
-default_section = "THIRDPARTY"
-include_trailing_comma = true
-line_length = 79
-multi_line_output = 3
-lines_after_imports = 2
-sections = [
-    "FUTURE",
-    "STDLIB",
-    "THIRDPARTY",
-    "FIRSTPARTY",
-    "LOCALFOLDER",
-]
-skip = [".venv", "node_modules"]
-
-[tool.mypy]
-follow_imports = "skip"
-show_error_codes = true
-ignore_missing_imports = true
-files = "."
-check_untyped_defs = true
-
 [tool.ruff]
-line-length = 120
-target-version = "py311"
 exclude = [".venv", ".git", ".mypy_cache", "__pycache__", "build", "node_modules"]
+line-length = 120
 show-fixes = true
+target-version = "py311"
+
+[tool.ruff.format]
+docstring-code-line-length = 80
+quote-style = "double"
 
 [tool.ruff.lint]
+ignore = ["E722", "B027", "B009"]
 select = ["E", "F", "W", "B", "I"]
-ignore = ["E722"]
 
 [tool.ruff.lint.isort]
-lines-after-imports = 2
 combine-as-imports = true
 default-section = "third-party"
+lines-after-imports = 2
 section-order = [
     "future",
     "standard-library",
@@ -64,6 +68,3 @@ section-order = [
     "first-party",
     "local-folder",
 ]
-
-[tool.ruff.format]
-quote-style = "double"
