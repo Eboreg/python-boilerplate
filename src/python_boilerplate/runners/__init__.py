@@ -4,4 +4,5 @@ from .setuptools import SetuptoolsRunner
 from .uv import UvRunner
 
 
-__all__ = ["Runner", "SetuptoolsRunner", "PoetryRunner", "UvRunner"]
+CONCRETE_RUNNERS: list[type[Runner]] = [PoetryRunner, SetuptoolsRunner, UvRunner]
+__all__ = ["Runner", "SetuptoolsRunner", "PoetryRunner", "UvRunner", "CONCRETE_RUNNERS"]

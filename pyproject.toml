@@ -1,6 +1,6 @@
 [project]
 name = "python-boilerplate"
-version = "0.4.0"
+version = "0.4.9"
 description = "Add your description here"
 license = "GPL-3.0-only"
 license-files = ["LICENSE"]
@@ -35,7 +35,7 @@ show-fixes = true
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "B", "I"]
-ignore = ["E722"]
+ignore = ["E722", "B027"]
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2

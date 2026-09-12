@@ -25,19 +25,21 @@ class PoetryRunner(Runner):
                 *[f"--dependency='{dep}'" for dep in self.get_dependencies()],
             ]
         )
-        print(f"Ran poetry init in {self.project_root_path}.")
+        self.log(f"Ran poetry init in {self.project_root_path}")
 
     def sync_poetry(self):
         self.run_in_project_dir(["poetry", "sync"])
-        print("Ran poetry sync.")
+        self.log("Ran poetry sync")
 
-    def run(self, force: bool = False, no_git: bool = False):
-        self.create_project_dir(force=force)
+    def run(self):
+        self.pre_run()
+        self.create_project_dir()
         self.write_readme()
         self.create_src_dir()
         self.copy_base_files()
-        if not no_git:
+        if not self.no_git:
             self.init_git()
         self.init_poetry()
-        self.update_pyproject_toml()
+        self.write_pyproject_toml()
         self.sync_poetry()
+        self.post_run()
